@@ -5,7 +5,7 @@ import App from './App'
 // 导入上面创建的路由配置目录
 import router from './router'
 
-Vue.config.productionTip = false
+Vue.config.productionTip = false;
 
 /* eslint-disable no-new */
 new Vue({
@@ -14,4 +14,4 @@ new Vue({
   router,
   components: { App },
   template: '<App/>'
-})
+});
