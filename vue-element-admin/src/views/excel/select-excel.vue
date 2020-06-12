@@ -1,0 +1,108 @@
+<template>
+  <div class="app-container">
+    <el-input v-model="filename" placeholder="请输入文件名(默认 excel-list)" style="width:350px;" prefix-icon="el-icon-document" />
+    <el-button :loading="downloadLoading" style="margin-bottom:20px" type="primary" icon="el-icon-document" @click="handleDownload">
+      导出已选择项
+    </el-button>
+    <a href="https://panjiachen.github.io/vue-element-admin-site/feature/component/excel.html" target="_blank" style="margin-left:15px;">
+      <el-tag type="info">Documentation</el-tag>
+    </a>
+    <el-table
+      ref="multipleTable"
+      v-loading="listLoading"
+      :data="list"
+      element-loading-text="拼命加载中"
+      border
+      fit
+      highlight-current-row
+      @selection-change="handleSelectionChange"
+    >
+      <el-table-column type="selection" align="center" />
+
+      <el-table-column align="center" label="序号" width="95">
+        <template slot-scope="scope">
+          {{ scope.$index }}
+        </template>
+      </el-table-column>
+      <el-table-column label="标题" align="center">
+        <template slot-scope="scope">
+          {{ scope.row.title }}
+        </template>
+      </el-table-column>
+      <el-table-column label="作者" width="110" align="center">
+        <template slot-scope="scope">
+          <el-tag>{{ scope.row.author }}</el-tag>
+        </template>
+      </el-table-column>
+      <el-table-column label="阅读量" width="115" align="center">
+        <template slot-scope="scope">
+          {{ scope.row.pageviews }}
+        </template>
+      </el-table-column>
+      <el-table-column align="center" label="时间" width="220">
+        <template slot-scope="scope">
+          <i class="el-icon-time" />
+          <span>{{ scope.row.display_time }}</span>
+        </template>
+      </el-table-column>
+    </el-table>
+  </div>
+</template>
+
+<script>
+import { fetchList } from '@/api/article'
+
+export default {
+  name: 'SelectExcel',
+  data() {
+    return {
+      list: null,
+      listLoading: true,
+      multipleSelection: [],
+      downloadLoading: false,
+      filename: ''
+    }
+  },
+  created() {
+    this.fetchData()
+  },
+  methods: {
+    fetchData() {
+      this.listLoading = true
+      fetchList(this.listQuery).then(response => {
+        this.list = response.data.items
+        this.listLoading = false
+      })
+    },
+    handleSelectionChange(val) {
+      this.multipleSelection = val
+    },
+    handleDownload() {
+      if (this.multipleSelection.length) {
+        this.downloadLoading = true
+        import('@/vendor/Export2Excel').then(excel => {
+          const tHeader = ['序号', '标题', '作者', '阅读量', '时间']
+          const filterVal = ['id', 'title', 'author', 'pageviews', 'display_time']
+          const list = this.multipleSelection
+          const data = this.formatJson(filterVal, list)
+          excel.export_json_to_excel({
+            header: tHeader,
+            data,
+            filename: this.filename
+          })
+          this.$refs.multipleTable.clearSelection()
+          this.downloadLoading = false
+        })
+      } else {
+        this.$message({
+          message: '请最少选中一个',
+          type: 'warning'
+        })
+      }
+    },
+    formatJson(filterVal, jsonData) {
+      return jsonData.map(v => filterVal.map(j => v[j]))
+    }
+  }
+}
+</script>
